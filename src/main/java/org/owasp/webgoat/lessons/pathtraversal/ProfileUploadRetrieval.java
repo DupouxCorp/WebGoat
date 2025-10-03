@@ -90,15 +90,25 @@ public class ProfileUploadRetrieval implements AssignmentEndpoint {
   @GetMapping("/PathTraversal/random-picture")
   @ResponseBody
   public ResponseEntity<?> getProfilePicture(HttpServletRequest request) {
-    var queryParams = request.getQueryString();
-    if (queryParams != null && (queryParams.contains("..") || queryParams.contains("/"))) {
-      return ResponseEntity.badRequest()
-          .body("Illegal characters are not allowed in the query params");
+    var id = request.getParameter("id");
+    int catId;
+    if (id == null) {
+      catId = RandomUtils.nextInt(1, 11);
+    } else {
+      // Check if id is all digits and in the correct range
+      try {
+        catId = Integer.parseInt(id);
+        if (catId < 1 || catId > 10) {
+          return ResponseEntity.badRequest()
+              .body("Invalid cat picture id: Only values between 1 and 10 are allowed");
+        }
+      } catch (NumberFormatException e) {
+        return ResponseEntity.badRequest()
+            .body("Invalid cat picture id: Only values between 1 and 10 are allowed");
+      }
     }
     try {
-      var id = request.getParameter("id");
-      var catPicture =
-          new File(catPicturesDirectory, (id == null ? RandomUtils.nextInt(1, 11) : id) + ".jpg");
+      var catPicture = new File(catPicturesDirectory, catId + ".jpg");
 
       if (catPicture.getName().toLowerCase().contains("path-traversal-secret.jpg")) {
         return ResponseEntity.ok()
